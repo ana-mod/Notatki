@@ -9,6 +9,7 @@ import android.util.Log
 import android.view.View
 import kotlinx.android.synthetic.main.activity_note_paint.*
 import kotlinx.android.synthetic.main.fragment_paint.*
+import kotlinx.serialization.ImplicitReflectionSerializer
 import java.lang.Exception
 
 class NotePaintActivity : AppCompatActivity() {
@@ -35,6 +36,7 @@ class NotePaintActivity : AppCompatActivity() {
         setInitDataFromDB()
     }
 
+    @ImplicitReflectionSerializer
     fun onClick(view: View) {
         when(view.getId()) {
             R.id.buttonSave -> {
@@ -62,6 +64,7 @@ class NotePaintActivity : AppCompatActivity() {
         }
     }
 
+    @ImplicitReflectionSerializer
     private fun sendDataToDB() {
         AsyncTask.execute {
             try {

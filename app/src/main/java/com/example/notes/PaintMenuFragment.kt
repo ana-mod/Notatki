@@ -20,7 +20,6 @@ import top.defaults.colorpicker.ColorPickerPopup
  */
 class PaintMenuFragment : Fragment() {
     private var listener: PaintFragment? = null
-    private var t = ""
 
     fun setPaintFragment(p: PaintFragment){
         listener = p
@@ -35,17 +34,14 @@ class PaintMenuFragment : Fragment() {
         val thisView = inflater.inflate(R.layout.fragment_paint_menu, container, false)
 
         thisView.clearButton.setOnClickListener {
-            //listener?.clearCanvas()
-
-            t = listener?.getPathsJSON().toString()
-            Log.d(TAG, t)
+            listener?.clearCanvas()
         }
         thisView.colorButton.setOnClickListener {
             pickColor()
         }
         thisView.undoButton.setOnClickListener {
-            //listener?.undo()
-            listener?.setPathsJSON(t)
+            listener?.undo()
+
         }
         thisView.eraseButton.setOnClickListener {
             listener?.switchToEraseMode()

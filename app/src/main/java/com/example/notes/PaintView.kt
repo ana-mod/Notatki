@@ -1,20 +1,17 @@
 package com.example.notes
 
-import android.annotation.SuppressLint
+
 import android.content.Context
-import android.drm.DrmStore
+
 import android.graphics.*
-import android.os.Build
-import android.support.annotation.RequiresApi
+
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
-import android.view.ViewGroup
-import com.google.gson.*
-import java.io.Serializable
-import java.lang.reflect.Type
-import org.json.JSONArray
+import kotlinx.serialization.*
+import kotlinx.serialization.internal.StringDescriptor
+import kotlinx.serialization.json.Json
 
 
 class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs){
@@ -44,7 +41,7 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs){
     private val brush = Paint(Paint.ANTI_ALIAS_FLAG)
 
     init {
-        background.setARGB(255, 0,255,0)
+        background.setARGB(255, 255,255,255)
         background.strokeWidth = 50f
         background.style = Paint.Style.STROKE
 
@@ -56,15 +53,24 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs){
 
     }
 
+    @Serializable
+    data class Data(val a: Int, val b: Int)
+
+
+
+    @ImplicitReflectionSerializer
     fun getPathsJSON():String{
-        //val g = Gson()
-        //return g.toJson(paths, ArrayList<Pair<Path, Paint>>().javaClass)
+        //val p = SerializablePath.MyPair(1f,2f)
+        val data = Data(1, 2)
+        val t = Json.stringify(data)
+
+
+        Log.d(TAG, t)
         return ""
     }
 
     fun setPathsJSON(s:String){
-        //val g = GsonBuilder()
-        //val g = GsonBuilder()
+
 
         paths = ArrayList()
     }
@@ -133,9 +139,7 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs){
         val touchedX = event.x/scale
         val touchedY = event.y/scale
 
-        val action = event.action
-
-        when(action){
+        when(event.action){
             MotionEvent.ACTION_DOWN -> drawPath.moveTo(touchedX, touchedY)
             MotionEvent.ACTION_MOVE -> drawPath.lineTo(touchedX, touchedY)
             MotionEvent.ACTION_UP -> {
@@ -191,32 +195,70 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs){
         }
     }
 
-
+    @Serializable
     private class SerializablePath : Path() {
+        @Serializable
+        class MyPair(val first:Float, val second:Float)
+        {
+            @Serializer(forClass = MyPair::class)
+            companion object : KSerializer<MyPair>{
+                override val descriptor: SerialDescriptor = StringDescriptor.withName("MyPair")
+
+                override fun deserialize(decoder: Decoder): MyPair {
+                    val f = decoder.decodeFloat()
+                    val s = decoder.decodeFloat()
+                    return MyPair(f,s)
+                }
+
+                override fun serialize(encoder: Encoder, obj: MyPair) {
+                    encoder.encodeFloat(obj.first)
+                    encoder.encodeFloat(obj.second)
+                }
+
+            }
+        }
+
         var movesTypes = ArrayList<Int>()
-        var xyArray = ArrayList<Pair<Float,Float>>()
+        var xyArray = ArrayList<MyPair>()
 
         override fun lineTo(x: Float, y: Float) {
             movesTypes.add(0)
-            xyArray.add(Pair(x,y))
+            xyArray.add(MyPair(x,y))
             super.lineTo(x, y)
         }
 
         override fun moveTo(x: Float, y: Float) {
             movesTypes.add(1)
-            xyArray.add(Pair(x,y))
+            xyArray.add(MyPair(x,y))
             super.moveTo(x, y)
         }
 
         override fun setLastPoint(dx: Float, dy: Float) {
             movesTypes.add(2)
-            xyArray.add(Pair(dx,dy))
+            xyArray.add(MyPair(dx,dy))
             super.setLastPoint(dx, dy)
         }
 
 
 
-        private class SerializablePathSerializer : JsonSerializer<SerializablePath> {
+
+        /*@Serializer(forClass = SerializablePath::class)
+        companion object :KSerializer<SerializablePath>
+        {
+            override val descriptor: SerialDescriptor =
+                StringDescriptor.withName("SerializablePath")
+
+            override fun deserialize(decoder: Decoder): SerializablePath {
+                TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+            }
+
+            override fun serialize(encoder: Encoder, obj: SerializablePath) {
+                //encoder.
+            }
+
+        }*/
+
+        /*private class SerializablePathSerializer : JsonSerializer<SerializablePath> {
             override fun serialize(src: SerializablePath, typeOfSrc: Type, context: JsonSerializationContext): JsonElement {
 
                 val types = JSONArray(src.movesTypes)
@@ -240,10 +282,28 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs){
                 json.asJsonPrimitive.asString
                 return SerializablePath()
             }
-        }
+        }*/
 
 
     }
+
+    /*@Serializer(forClass = Pair::class)
+    object PairSerializer: KSerializer<Pair<Float, Float>> {
+
+        override val descriptor: SerialDescriptor =
+            StringDescriptor.withName("PairSerializer")
+
+        override fun serialize(output: Encoder, obj: Pair<Float,Float>) {
+            output.encodeFloat(obj.first)
+            output.encodeFloat(obj.second)
+        }
+
+        override fun deserialize(input: Decoder): Pair<Float,Float> {
+            val first = input.decodeFloat()
+            val second = input.decodeFloat()
+            return Pair(first,second)
+        }
+    }*/
 
 
 }
