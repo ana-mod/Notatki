@@ -9,9 +9,7 @@ import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
-import kotlinx.serialization.*
-import kotlinx.serialization.internal.StringDescriptor
-import kotlinx.serialization.json.Json
+import java.lang.StringBuilder
 
 
 class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs){
@@ -53,19 +51,12 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs){
 
     }
 
-    @Serializable
-    data class Data(val a: Int, val b: Int)
 
-
-
-    @ImplicitReflectionSerializer
     fun getPathsJSON():String{
-        //val p = SerializablePath.MyPair(1f,2f)
-        val data = Data(1, 2)
-        val t = Json.stringify(data)
 
-
-        Log.d(TAG, t)
+        //val t = SerializablePath.serialize(paths[0].first)
+        //Log.d(TAG, "tso")
+        //Log.d(TAG, t)
         return ""
     }
 
@@ -73,6 +64,7 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs){
 
 
         paths = ArrayList()
+        //paths.add(Pair(SerializablePath.deserialize(s), brush))
     }
 
     fun getLowestY():Float{
@@ -195,115 +187,70 @@ class PaintView(context: Context?, attrs: AttributeSet?) : View(context, attrs){
         }
     }
 
-    @Serializable
+
     private class SerializablePath : Path() {
-        @Serializable
-        class MyPair(val first:Float, val second:Float)
-        {
-            @Serializer(forClass = MyPair::class)
-            companion object : KSerializer<MyPair>{
-                override val descriptor: SerialDescriptor = StringDescriptor.withName("MyPair")
-
-                override fun deserialize(decoder: Decoder): MyPair {
-                    val f = decoder.decodeFloat()
-                    val s = decoder.decodeFloat()
-                    return MyPair(f,s)
-                }
-
-                override fun serialize(encoder: Encoder, obj: MyPair) {
-                    encoder.encodeFloat(obj.first)
-                    encoder.encodeFloat(obj.second)
-                }
-
-            }
-        }
 
         var movesTypes = ArrayList<Int>()
-        var xyArray = ArrayList<MyPair>()
+        var xyArray = ArrayList<Pair<Float,Float>>()
 
         override fun lineTo(x: Float, y: Float) {
             movesTypes.add(0)
-            xyArray.add(MyPair(x,y))
+            xyArray.add(Pair(x,y))
             super.lineTo(x, y)
         }
 
         override fun moveTo(x: Float, y: Float) {
             movesTypes.add(1)
-            xyArray.add(MyPair(x,y))
+            xyArray.add(Pair(x,y))
             super.moveTo(x, y)
         }
 
         override fun setLastPoint(dx: Float, dy: Float) {
             movesTypes.add(2)
-            xyArray.add(MyPair(dx,dy))
+            xyArray.add(Pair(dx,dy))
             super.setLastPoint(dx, dy)
         }
 
-
-
-
-        /*@Serializer(forClass = SerializablePath::class)
-        companion object :KSerializer<SerializablePath>
-        {
-            override val descriptor: SerialDescriptor =
-                StringDescriptor.withName("SerializablePath")
-
-            override fun deserialize(decoder: Decoder): SerializablePath {
-                TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        companion object{
+            fun serialize(p:SerializablePath):String{
+                val b = StringBuilder()
+                for(i in 0 until p.movesTypes.size)
+                {
+                    b.append(p.movesTypes[i])
+                    b.append(',')
+                    b.append(p.xyArray[i].first)
+                    b.append(',')
+                    b.append(p.xyArray[i].second)
+                    b.append(';')
+                    Log.d(TAG, "WTF")
+                }
+                return b.toString()
             }
 
-            override fun serialize(encoder: Encoder, obj: SerializablePath) {
-                //encoder.
-            }
+            fun deserialize(s:String):SerializablePath{
+                val p = SerializablePath()
+                val a = s.split(';')
+                a.forEach{
+                    if(it!=""){
+                        val t = it.split(',')
+                        when(t[0].toInt()){
+                            0 -> p.lineTo(t[1].toFloat(), t[2].toFloat())
+                            1 -> p.moveTo(t[1].toFloat(), t[2].toFloat())
+                            else -> p.setLastPoint(t[1].toFloat(), t[2].toFloat())
+                        }
+                    }
 
-        }*/
+                }
 
-        /*private class SerializablePathSerializer : JsonSerializer<SerializablePath> {
-            override fun serialize(src: SerializablePath, typeOfSrc: Type, context: JsonSerializationContext): JsonElement {
-
-                val types = JSONArray(src.movesTypes)
-                val xy = JSONArray(src.xyArray)
-                val o = JsonObject()
-
-                o.add("types", types as JsonElement)
-               // o.add("movesTypes", types.)
-
-
-                return o
+                return p
             }
         }
 
-        private inner class SerializablePathDeserializer : JsonDeserializer<SerializablePath> {
-            @Throws(JsonParseException::class)
-            override fun deserialize(json: JsonElement, typeOfT: Type, context: JsonDeserializationContext): SerializablePath {
-                val p = SerializablePath()
-                //p.xyArray = json.asJsonObject.getAsJsonArray()
-
-                json.asJsonPrimitive.asString
-                return SerializablePath()
-            }
-        }*/
 
 
     }
 
-    /*@Serializer(forClass = Pair::class)
-    object PairSerializer: KSerializer<Pair<Float, Float>> {
 
-        override val descriptor: SerialDescriptor =
-            StringDescriptor.withName("PairSerializer")
-
-        override fun serialize(output: Encoder, obj: Pair<Float,Float>) {
-            output.encodeFloat(obj.first)
-            output.encodeFloat(obj.second)
-        }
-
-        override fun deserialize(input: Decoder): Pair<Float,Float> {
-            val first = input.decodeFloat()
-            val second = input.decodeFloat()
-            return Pair(first,second)
-        }
-    }*/
 
 
 }
